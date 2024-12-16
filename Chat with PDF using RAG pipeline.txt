@@ -1,0 +1,33 @@
+import pymupdf
+import sentence_transformers
+import faiss
+import openai
+def ingest_pdf(pdf_path):
+    pdf = pymupdf.open(pdf_path)
+    text = ""
+    for page in pdf.pages:
+        text += page.extract_text()
+    chunks = nltk.sent_tokenize(text)
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+    embeddings = model.encode(chunks)
+    index = faiss.IndexFlatL2(embeddings.shape[1])
+    index.add(embeddings)
+    faiss.write_index(index, "index.faiss")
+def query_pdf(query):
+    query_embedding = model.encode([query])
+    distances, indices = index.search(query_embedding, k=5)
+    relevant_chunks = [chunks[i] for i in indices[0]]
+    prompt = f"Here are some relevant passages from the PDF: {relevant_chunks}. Based on this, please answer the query: {query}"
+    response = openai.Completion.create(
+        engine="text-davinci-003",
+        prompt=prompt,
+        max_tokens=1024,
+        n=1,
+        stop=None,
+        temperature=0.5,
+    )
+    return response["choices"][0]["text"]
+def compare_pdfs(query):
+  if _name_ == "_main_":
+    ingest_pdf("path/to/your/pdf.pdf")
+    print(query_pdf("What is the unemployment rate for college graduates?"))
